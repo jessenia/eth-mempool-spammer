@@ -27,7 +27,7 @@
   "httpTimeoutSecs": 6,
 
   "complianceFilter": "",
-  "validatorListUrl": "${VALIDATOR_LIST_URL}",
+  "validatorListUrl": "https://bloxroute.hoodi.blxrbdn.com/relay/v1/builder/validators",
   "compliancePollIntervalSecs": 12,
   "slotOffset": 0,
 
