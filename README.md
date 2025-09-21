@@ -14,8 +14,8 @@ Spam either the **private builder** (only on specified compliance slots) or the 
 ## Installation
 Clone the repo and install dependencies:
 ```bash
-git clone git@github.com:bloXroute-Labs/eth-mev-docs.git
-cd eth-mev-docs/scripts/node
+git clone git@github.com:jessenia/eth-mempool-spammer.git
+cd eth-mempool-spammer
 npm install
 ```
 
@@ -25,19 +25,19 @@ Update the config.json and replace/update lines as needed
 Run with your config:
 ```bash
 # spam the public mempool
-node hoodi_spammer.js -c ./config.public.json
+node src/hoodi_spammer.js -c config/config.public.json
 
 # or spam the private mempool
-node hoodi_spammer.js -c ./config.private.json
+node src/hoodi_spammer.js -c config/config.private.json
 ```
 
 Run with a time limit (in seconds):
 ```bash
 # spam the public mempool
-node hoodi_spammer.js -c ./config.public.json --duration 900
+node src/hoodi_spammer.js -c config/config.public.json --duration 900
 
 # spam the private mempool
-node hoodi_spammer.js -c ./config.private.json --duration 900
+node src/hoodi_spammer.js -c config/config.private.json --duration 900
 ```
 
 Exit codes
