@@ -6,17 +6,18 @@
  *   - If cfg.complianceFilter is set → target only those slots
  *   - Else → target ALL upcoming slots from validatorListUrl (capped by cfg.maxSlotsPerCycle)
  *   - Waits until the pre-slot window and submits bundles for that slot's target block,
- *     posting a NEW bundle every cfg.bundleIntervalMs (default 3000 ms) until the target
- *     block appears (or until cfg.maxBundlesPerSlot is hit; 0 = unlimited).
+ *     posting a NEW bundle every cfg.bundleIntervalMs until the target block appears
+ *     (or until cfg.maxBundlesPerSlot is hit; 0 = unlimited).
  *
  * Public mode:
- *   - Sends one raw tx per block
+ *   - Sends one raw tx per block (nonce-replacement strategy)
  *
  * Run:
  *   node src/hoodi_spammer.js -c config/config.private.json
  *   node src/hoodi_spammer.js -c config/config.private.json --duration 900
  */
 
+import "dotenv/config";                 // load .env into process.env
 import fs from "fs";
 import process, { argv, exit } from "process";
 import { randomUUID } from "node:crypto";
@@ -46,8 +47,21 @@ function normalizeAddress(addr, label) {
   }
 }
 
+// Load JSON, expand ${ENV_VARS}, then validate & normalize
 function loadConfig(path) {
-  const cfg = JSON.parse(fs.readFileSync(path, "utf8"));
+  let raw = fs.readFileSync(path, "utf8");
+
+  // Substitute ${VAR} from environment; fail fast on missing
+  raw = raw.replace(/\$\{(\w+)\}/g, (_, name) => {
+    const v = process.env[name];
+    if (v === undefined) {
+      console.error(`Missing environment variable: ${name} (referenced in ${path})`);
+      exit(1);
+    }
+    return v;
+  });
+
+  const cfg = JSON.parse(raw);
 
   const required = [
     "mode","readRpcUrl","privateKey","expectedChainId",
@@ -95,29 +109,26 @@ function loadConfig(path) {
       console.error(`Private mode requires "validatorListUrl".`);
       exit(1);
     }
-    // cfg.complianceFilter is OPTIONAL:
-    //   - present → compliance-gated mode
-    //   - absent/empty → ALL-SLOTS mode
+    // cfg.complianceFilter is optional: if present → compliance-gated; else → all-slots
   }
 
   cfg.authorizationHeader ??= null;
   cfg.runDurationSecs =
     Number.isFinite(Number(cfg.runDurationSecs)) ? Number(cfg.runDurationSecs) : null;
-  cfg.compliancePollIntervalSecs ??= 12; // schedule refresh cadence (seconds)
+  cfg.compliancePollIntervalSecs ??= 12; // seconds
   cfg.slotOffset ??= 0;
   cfg.retryAttempts ??= 0; // public only; 0 = unlimited
   cfg.maxTxFeeEth ??= null;
 
-  // Optional performance/timing overrides (defaults if not provided)
-  cfg.preSlotLeadMs ??= 1100;          // when to enter pre-slot window
-  cfg.maxSlotsPerCycle ??= 8;          // cap for ALL-SLOTS planning
-  cfg.idleRetryMs ??= 1200;            // idle sleep between polls (ms)
-  cfg.relayPostTimeoutMs ??= 400;      // relay POST timeout (ms)
-  cfg.postBlockReceiptWaitMs ??= 7000; // wait after block appears (ms)
+  // Performance/timing defaults
+  cfg.preSlotLeadMs ??= 1100;
+  cfg.maxSlotsPerCycle ??= 8;
+  cfg.idleRetryMs ??= 1200;
+  cfg.relayPostTimeoutMs ??= 400;
+  cfg.postBlockReceiptWaitMs ??= 7000;
 
-  // NEW: periodic bundle posting during window
-  cfg.bundleIntervalMs ??= 3000;       // post a new bundle every N ms (default 3s)
-  cfg.maxBundlesPerSlot ??= 0;         // 0 = unlimited posts per slot window
+  cfg.bundleIntervalMs ??= 3000;
+  cfg.maxBundlesPerSlot ??= 0;
 
   // Slot-head sources (private mode logs/clock)
   cfg.beaconchainUrl ??= "https://hoodi.beaconcha.in/";
@@ -180,7 +191,7 @@ async function postJsonQuickMs(url, body, timeoutMs, headers = {}) {
       timeoutMs
     );
   } catch {
-    return null; // treat relay timeout as a miss; we won't re-send that attempt
+    return null; // treat relay timeout as a miss; we won't re-send that attempt immediately
   }
 }
 
@@ -562,7 +573,6 @@ async function runPrivateCompliance({
   // suppress repeated "No upcoming …" logs — one line per head value
   let lastNoSlotHead = null;
 
-  const iface = cfg.asset === "WETH" ? makeWethIface() : null;
   const amountWei = ethers.parseEther(String(cfg.transferAmountEth));
 
   // Seed slot clock from schedule (fallback if beacons fail)

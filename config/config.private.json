@@ -1,13 +1,13 @@
 {
   "mode": "private",
 
-  "readRpcUrl": "https://hoodi.infura.io/v3/<INSERT API KEY>",
-  "privateRelayUrl": "<INSERT RELAY URL>:8645",
+  "readRpcUrl": "${READ_RPC_URL}",
+  "privateRelayUrl": "${PRIVATE_RELAY_URL}",
 
-  "privateKey": "<INSERT WALLET PRIVATE KEY>",
+  "privateKey": "${WALLET_PRIVATE_KEY}",
   "expectedChainId": 560048,
 
-  "recipientAddress": "<INSERT TARGET RECIPIENT ADDRESS>",
+  "recipientAddress": "${RECIPIENT_ADDRESS}",
   "transferAmountEth": "0.001",
 
   "ethGasLimit": 200000,
@@ -27,7 +27,7 @@
   "httpTimeoutSecs": 6,
 
   "complianceFilter": "",
-  "validatorListUrl": "<INSERT RELAY URL>/relay/v1/builder/validators",
+  "validatorListUrl": "${VALIDATOR_LIST_URL}",
   "compliancePollIntervalSecs": 12,
   "slotOffset": 0,
 

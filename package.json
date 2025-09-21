@@ -1,16 +1,18 @@
 {
   "name": "hoodi-spammer",
-  "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node src/hoodi_spammer.js -c config/config.public.json"
+    "start": "node src/hoodi_spammer.js -c config/config.private.json"
   },
   "dependencies": {
-    "ethers": "^6.15.0",
-    "undici": "^7.16.0"
+    "dotenv": "^16.6.1",
+    "ethers": "^6.15.0"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "version": "1.0.0",
+  "description": "Spam either the **private builder** (only on specified compliance slots) or the **public mempool**.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
